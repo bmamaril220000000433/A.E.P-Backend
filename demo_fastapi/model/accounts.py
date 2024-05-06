@@ -18,7 +18,8 @@ def hash_password(password: str):
 @Accounts_Router.get("/AllUsers/", response_model=list)
 async def get_all_users(db=Depends(get_db)):
     query = "SELECT * FROM user_accounts"
-    db.execute(query)
+    cursor = db.cursor()
+    cursor.execute(query)
     user_data = [
         {
         "id": user[0], 
@@ -26,7 +27,7 @@ async def get_all_users(db=Depends(get_db)):
         "password": user[2], 
         "email": user[3]
         }      
-        for user in db.fetchall()]
+        for user in cursor.fetchall()]
     return user_data
 
 @Accounts_Router.get("/users/{user_id}", response_model=dict)
