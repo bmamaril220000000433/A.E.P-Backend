@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 03, 2024 at 05:37 AM
+-- Generation Time: May 09, 2024 at 03:53 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,26 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `entrypass`
 --
-
--- --------------------------------------------------------
-
---
--- Table structure for table `admin`
---
-
-CREATE TABLE `admin` (
-  `admin_name` varchar(30) NOT NULL,
-  `admin_password` varchar(20) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `admin`
---
-
-INSERT INTO `admin` (`admin_name`, `admin_password`) VALUES
-('admen', '$2b$12$Mc4DyPc2K1K6I'),
-('admin1', 'admin1'),
-('admin2', 'admin2');
 
 -- --------------------------------------------------------
 
@@ -106,27 +86,26 @@ CREATE TABLE `specific_office` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `user_accounts`
+-- Table structure for table `users`
 --
 
-CREATE TABLE `user_accounts` (
-  `id` int(11) NOT NULL,
-  `username` varchar(255) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL
+CREATE TABLE `users` (
+  `email` varchar(50) NOT NULL,
+  `password` varchar(50) NOT NULL,
+  `firstname` varchar(100) NOT NULL,
+  `lastname` varchar(100) NOT NULL,
+  `role` varchar(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `user_accounts`
+-- Dumping data for table `users`
 --
 
-INSERT INTO `user_accounts` (`id`, `username`, `password`, `email`) VALUES
-(1, 'Person1', '$2b$12$vQzHl.utnN7Knu4xQUF.bOivlg1BqisrnRpyaYQxKR/dtSC10onC.', 'Person1@gmail.com'),
-(2, 'Person2', 'Person2', 'Person2@gmail.com'),
-(3, 'Person3', 'Person3', 'Person3@gmail.com'),
-(4, 'Person4', 'Person4', 'Person4@gmail.com'),
-(5, 'Person5', 'Person5', 'Person5@gmail.com'),
-(56, 't', '$2b$12$fb7nPqJMUGVmYxZM2gn/A.doHeb3nq/UOBPe/3KcQDKQvfxxaedsO', 't');
+INSERT INTO `users` (`email`, `password`, `firstname`, `lastname`, `role`) VALUES
+('Person1@gmail.com', 'Person11111', 'Person11', 'Person11', 'visitor'),
+('Person2@gmail.com', 'Person2', 'Person22', 'Person22', 'visitor'),
+('Person3@gmail.com', 'Person3', 'Person33', 'Person33', 'visitor'),
+('test', 'test', 'test', 'test', 'visitor');
 
 -- --------------------------------------------------------
 
@@ -166,19 +145,38 @@ CREATE TABLE `visit_transaction` (
   `visitor_fname` varchar(30) NOT NULL,
   `visitor_lname` varchar(30) NOT NULL,
   `purpose` varchar(200) NOT NULL,
-  `guard_name` varchar(30) NOT NULL,
+  `guard_name` varchar(30) DEFAULT NULL,
   `office_name` varchar(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Stand-in structure for view `visit_transaction_info`
+-- (See below for the actual view)
+--
+CREATE TABLE `visit_transaction_info` (
+`transaction_number` int(11)
+,`visitor_id` int(11)
+,`visitor_fname` varchar(30)
+,`visitor_lname` varchar(30)
+,`purpose` varchar(200)
+,`guard_name` varchar(30)
+,`office_name` varchar(20)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `visit_transaction_info`
+--
+DROP TABLE IF EXISTS `visit_transaction_info`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `visit_transaction_info`  AS SELECT `vt`.`transaction_number` AS `transaction_number`, `v`.`visitor_id` AS `visitor_id`, `v`.`visitor_fname` AS `visitor_fname`, `v`.`visitor_lname` AS `visitor_lname`, `v`.`purpose` AS `purpose`, `g`.`guard_name` AS `guard_name`, `o`.`office_name` AS `office_name` FROM (((`visit_transaction` `vt` join `visitor` `v` on(`vt`.`visitor_id` = `v`.`visitor_id`)) join `guard` `g` on(`vt`.`guard_name` = `g`.`guard_name`)) join `office` `o` on(`vt`.`office_name` = `o`.`office_name`)) ;
 
 --
 -- Indexes for dumped tables
 --
-
---
--- Indexes for table `admin`
---
-ALTER TABLE `admin`
-  ADD PRIMARY KEY (`admin_name`);
 
 --
 -- Indexes for table `guard`
@@ -207,12 +205,10 @@ ALTER TABLE `specific_office`
   ADD KEY `fk_specific_office_office_name` (`office_name`);
 
 --
--- Indexes for table `user_accounts`
+-- Indexes for table `users`
 --
-ALTER TABLE `user_accounts`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `username` (`username`),
-  ADD UNIQUE KEY `email` (`email`);
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`email`);
 
 --
 -- Indexes for table `visitor`
@@ -232,12 +228,6 @@ ALTER TABLE `visit_transaction`
 --
 -- AUTO_INCREMENT for dumped tables
 --
-
---
--- AUTO_INCREMENT for table `user_accounts`
---
-ALTER TABLE `user_accounts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
 
 --
 -- AUTO_INCREMENT for table `visitor`
