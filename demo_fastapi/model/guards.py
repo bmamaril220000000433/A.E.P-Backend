@@ -6,13 +6,14 @@ import bcrypt
 Guards_Router = APIRouter(tags=["Guards"])
 
 @Guards_Router.get("/AllGuards/", response_model=list)
-async def get_all_guards(db=Depends(get_db)):
+async def getAllGuards(db=Depends(get_db)):
+    cursor = db.cursor()
     query = "SELECT * FROM guard"
-    db.execute(query)
+    cursor.execute(query)
     guard_data = [
         {
         "guard_name": guard[0], 
         "date_of_shift": guard[1]
         }      
-        for guard in db.fetchall()]
+        for guard in cursor.fetchall()]
     return guard_data

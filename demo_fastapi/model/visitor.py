@@ -8,7 +8,7 @@ Visitor_Router = APIRouter(tags=["Visitor"])
 # CRUD operations
 
 @Visitor_Router.get("/Visitors/", response_model=list)
-async def get_all_visitors_booking(db=Depends(get_db)):
+async def getAllVisitorsBooking(db=Depends(get_db)):
     cursor = db.cursor()
     query = "SELECT * FROM visitor"
     cursor.execute(query)
@@ -26,7 +26,7 @@ async def get_all_visitors_booking(db=Depends(get_db)):
     return visitor_data
 
 @Visitor_Router.post("/Visitors/", response_model=dict)
-async def create_visitor_transaction(
+async def createVisitorTransaction(
     visitor_First_name: str = Form(...), 
     visitor_Last_name: str = Form(...),
     purpose: str = Form(...),
@@ -51,7 +51,7 @@ async def create_visitor_transaction(
             cursor.close()  # Close cursor in the finally block
 
 @Visitor_Router.delete("/VisitorInfo/{visitor_id}", response_model=dict)
-async def delete_visitor_info(
+async def deleteVisitorInfo(
     visitor_id: int,
     db=Depends(get_db)
 ):

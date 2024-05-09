@@ -15,19 +15,22 @@ def hash_password(password: str):
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed_password.decode('utf-8')  # Decode bytes to string for storage
 
-@Accounts_Router.post("/Login/", response_model=list)
-async def Login(
-    email: str = Form(...), 
-    password: str = Form(...),
-    db=Depends(get_db)):
+from pydantic import BaseModel
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+@Accounts_Router.post("/Login/", response_model=dict)
+async def Login(login: LoginRequest,db=Depends(get_db)):
 
     cursor = db.cursor()
 
-    query = "SELECT * FROM users WHERE email = %s"
-    cursor.execute(query, (email,))
+    query = "SELECT email, password FROM users WHERE email = %s"
+    cursor.execute(query, (login.email,))
     user = cursor.fetchone()
 
-    if not user or user[1] != password:
+    if not user or user[1] != login.password:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     cursor.close()
