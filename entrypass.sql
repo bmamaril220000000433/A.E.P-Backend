@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 09, 2024 at 03:53 AM
+-- Generation Time: May 10, 2024 at 03:02 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -118,7 +118,7 @@ CREATE TABLE `visitor` (
   `visitor_fname` varchar(30) NOT NULL,
   `visitor_lname` varchar(30) NOT NULL,
   `purpose` varchar(200) NOT NULL,
-  `date_of_visit` date NOT NULL,
+  `date_of_visit` varchar(10) NOT NULL,
   `time_of_visit` varchar(7) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
