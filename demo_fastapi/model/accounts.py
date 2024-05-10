@@ -1,164 +1,79 @@
-# model/accounts.py
+# model/visitor.py
 from fastapi import Depends, HTTPException, APIRouter, Form
 from .db import get_db
 import bcrypt
-import mysql.connector.errors
 
-Accounts_Router = APIRouter(tags=["UserAccounts"])
+Visitor_Router = APIRouter(tags=["Visitor"])
 
 # CRUD operations
 
-# Password hashing function using bcrypt
-def hash_password(password: str):
-    # Generate a salt and hash the password
-    salt = bcrypt.gensalt()
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
-    return hashed_password.decode('utf-8')  # Decode bytes to string for storage
-
-from pydantic import BaseModel
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
-@Accounts_Router.post("/Login/", response_model=dict)
-async def Login(login: LoginRequest,db=Depends(get_db)):
-
+@Visitor_Router.get("/Visitors/", response_model=list)
+async def getAllVisitorsBooking(db=Depends(get_db)):
     cursor = db.cursor()
-
-    query = "SELECT email, password FROM users WHERE email = %s"
-    cursor.execute(query, (login.email,))
-    user = cursor.fetchone()
-
-    if not user or user[1] != login.password:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-
-    cursor.close()
-    return {"message": "Login successful"}
-
-@Accounts_Router.get("/AllUsers/", response_model=list)
-async def getAllUsers(db=Depends(get_db)):
-    query = "SELECT * FROM users"
-    cursor = db.cursor()
+    query = "SELECT * FROM visitor"
     cursor.execute(query)
-    user_data = [
+    visitor_data = [
         {
-        "email": user[0], 
-        "password": user[1], 
-        "firstname": user[2], 
-        "lastname": user[3],
-        "role": user[4]
+        "visitorid": visitor[0], 
+        "visitor_fname": visitor[1], 
+        "visitor_lname": visitor[2], 
+        "purpose": visitor[3], 
+        "date_of_visit": visitor[4], 
+        "time_of_visit": visitor[5]
         }      
-        for user in cursor.fetchall()]
-    return user_data
+        for visitor in cursor.fetchall()
+        ]
+    return visitor_data
 
-@Accounts_Router.get("/users/{user_id}", response_model=dict)
-async def readUser(
-    email: str, 
+@Visitor_Router.post("/Visitors/", response_model=dict)
+async def createVisitorTransaction(
+    visitor_First_name: str = Form(...), 
+    visitor_Last_name: str = Form(...),
+    purpose: str = Form(...),
+    date_of_visit: str = Form(...),
+    time_of_visit: str = Form(...),
     db=Depends(get_db)
 ):
     try:
         cursor = db.cursor()
-        query = "SELECT email, firstname, lastname FROM users WHERE email = %s"
-        cursor.execute(query, (email,))
-        user = cursor.fetchone()
-        if user is not None:
-            return {"email": user[0], "firstname": user[1], "lastname": user[2]}
-        raise HTTPException(status_code=404, detail="User not found")
-    finally:
-        if cursor:
-            cursor.close()  
+        query = "INSERT INTO visitor (visitor_fname, visitor_lname, purpose, date_of_visit, time_of_visit) VALUES (%s, %s, %s, %s, %s)"
+        cursor.execute(query, (visitor_First_name, visitor_Last_name, purpose, date_of_visit, time_of_visit))
 
-@Accounts_Router.post("/CreateAccount/", response_model=dict)
-async def createUser(
-    email: str = Form(...), 
-    password: str = Form(...), 
-    firstname: str = Form(...), 
-    lastname: str = Form(...), 
-    role: str = "visitor",
-    db=Depends(get_db)
-):
-    cursor = None
-    try:        
-        cursor = db.cursor()
-        hashed_password = hash_password(password)
-        
-        # Check if the account exists
-        query_check_existing = "SELECT email FROM users WHERE email = %s"
-        cursor.execute(query_check_existing, (email,))
-        existing_account = cursor.fetchone()
-        
-        query = "INSERT INTO users (email, password, firstname, lastname, role) VALUES (%s, %s, %s, %s, %s)"
-        cursor.execute(query, (email, password, firstname, lastname, role)) # Temporarily not hashed
-        existing_account = cursor.fetchone()
-
+        # Retrieve the last inserted ID using LAST_INSERT_ID()
+        cursor.execute("SELECT LAST_INSERT_ID()")
+        new_visitor_id = cursor.fetchone()
         db.commit()
-        cursor.close()
-        
-        return {"Message": "Account created successfully!"}
-    
-    except mysql.connector.errors.IntegrityError as e:
-        if e.errno == 1062:  # Duplicate entry error
-            raise HTTPException(status_code=400, detail="Username or email already exists")
-        else:
-            raise HTTPException(status_code=500, detail="Database error occurred")
-        
+
+        return {"id": new_visitor_id, "visitor_First_name": visitor_First_name, "visitor_Last_name": visitor_Last_name, 
+        "purpose": purpose, "date_of_visit": date_of_visit, "time_of_visit": time_of_visit}
     finally:
         if cursor:
-            cursor.close()  
+            cursor.close()  # Close cursor in the finally block
 
-@Accounts_Router.put("/users/{user_id}", response_model=dict)
-async def Change_Pass(
-    email: str,
-    password: str = Form(...),
-    db=Depends(get_db)
-):
-    try:    
-        cursor = db.cursor()
-        hashed_password = hash_password(password)
-
-        query = "UPDATE users SET password = %s WHERE email = %s"
-        cursor.execute(query, (password, email)) # Temporarily not hashed
-
-        if cursor.rowcount > 0:
-            db.commit()
-            return {"message": "User password successfully"}
-        
-        # If no rows were affected, user not found
-        raise HTTPException(status_code=404, detail="User not found")
-
-    finally:
-        if cursor:
-            cursor.close()  
-
-@Accounts_Router.delete("/DeleteAccount/{account_id}", response_model=dict)
-async def deleteAccount(
-    email: str,
+@Visitor_Router.delete("/VisitorInfo/{visitor_id}", response_model=dict)
+async def deleteVisitorInfo(
+    visitor_id: int,
     db=Depends(get_db)
 ):
     try:
         cursor = db.cursor()
+        # Check if the visitor info exists
+        query_check_visitor_info = "SELECT visitor_id FROM visitor WHERE visitor_id = %s"
+        cursor.execute(query_check_visitor_info, (visitor_id,))
+        existing_visitor = cursor.fetchone()
 
-        # Check if the account exists
-        query_check_account = "SELECT email FROM users WHERE email = %s"
-        cursor.execute(query_check_account, (email,))
-        existing_account = cursor.fetchone()
+        if not existing_visitor:
+            raise HTTPException(status_code=404, detail="visitor info not found")
 
-        if not existing_account:
-            raise HTTPException(status_code=404, detail="Account not found")
-
-        # Delete the account
-        query_delete_account = "DELETE FROM users WHERE email = %s"
-        cursor.execute(query_delete_account, (email,))
+        # Delete the visitor info
+        query_delete_visitor_info = "DELETE FROM visitor WHERE visitor_id = %s"
+        cursor.execute(query_delete_visitor_info, (visitor_id,))
         db.commit()
-        cursor.close()
 
-        return {"Message": "Account deleted successfully!"}
-        '''
-        except Exception as e:
+        return {"message": "visitor info deleted successfully"}
+    except Exception as e:
         # Handle other exceptions if necessary
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-        '''
     finally:
         # Close the database cursor
         if cursor:
