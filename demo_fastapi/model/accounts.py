@@ -1,6 +1,7 @@
 # model/accounts.py
 from fastapi import Depends, HTTPException, APIRouter, Form
 from .db import get_db
+from pydantic import BaseModel
 import bcrypt
 import mysql.connector.errors
 
@@ -15,7 +16,14 @@ def hash_password(password: str):
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed_password.decode('utf-8')  # Decode bytes to string for storage
 
-from pydantic import BaseModel
+def verify_password(input_password: str, hashed_password: str) -> bool:
+    # Verify the input password against the stored hashed password
+    return bcrypt.checkpw(input_password.encode('utf-8'), hashed_password.encode('utf-8'))
+
+def verify_passwordUnencrypted(input_password: str, stored_password: str) -> bool:
+    # Simple comparison of input_password with stored_password
+    return input_password == stored_password
+
 
 class LoginRequest(BaseModel):
     email: str
@@ -52,7 +60,7 @@ async def getAllUsers(db=Depends(get_db)):
         for user in cursor.fetchall()]
     return user_data
 
-@Accounts_Router.get("/users/{user_id}", response_model=dict)
+@Accounts_Router.get("/userEmail/{email}", response_model=dict)
 async def readUser(
     email: str, 
     db=Depends(get_db)
@@ -108,31 +116,57 @@ async def createUser(register: UserRegistration, db=Depends(get_db)
         if cursor:
             cursor.close()  
 
-@Accounts_Router.put("/users/{user_id}", response_model=dict)
+class ChangePass(BaseModel):
+    old_password: str
+    new_password: str
+
+@Accounts_Router.put("/users/{email}", response_model=dict)
 async def Change_Pass(
     email: str,
-    password: str = Form(...),
+    change_password: ChangePass,
     db=Depends(get_db)
 ):
-    try:    
+    try:
         cursor = db.cursor()
-        hashed_password = hash_password(password)
 
-        query = "UPDATE users SET password = %s WHERE email = %s"
-        cursor.execute(query, (password, email)) # Temporarily not hashed
+        # Retrieve password from the database for the user
+        query = "SELECT password FROM users WHERE email = %s"
+        cursor.execute(query, (email,))
+        user_data = cursor.fetchone()
+
+        if not user_data:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # new_password = user_data[0]
+
+        # Verify the old password -- this is a comment
+        # if not verify_password(old_password, hashed_password):
+        #    raise HTTPException(status_code=400, detail="Old password is incorrect")
+
+        # Hash the new password -- this is a comment
+        # new_hashed_password = hash_password(new_password)
+
+        stored_password = user_data[0]
+
+        # Verify the old password (using basic comparison)
+        if not verify_passwordUnencrypted(change_password.old_password, stored_password):
+            raise HTTPException(status_code=400, detail="Old password is incorrect")
+
+        # Update the password in the database
+        update_query = "UPDATE `users` SET `password` = %s WHERE `users`.`email` = %s;"
+        cursor.execute(update_query, (change_password.new_password, email))
 
         if cursor.rowcount > 0:
             db.commit()
-            return {"message": "User password successfully"}
-        
-        # If no rows were affected, user not found
-        raise HTTPException(status_code=404, detail="User not found")
+            return {"message": "User password updated successfully"}
+
+        raise HTTPException(status_code=400, detail="Failed to update password")
 
     finally:
         if cursor:
-            cursor.close()  
+            cursor.close()
 
-@Accounts_Router.delete("/DeleteAccount/{account_id}", response_model=dict)
+@Accounts_Router.delete("/DeleteAccount/{email}", response_model=dict)
 async def deleteAccount(
     email: str,
     db=Depends(get_db)

@@ -1,6 +1,7 @@
 # model/visitor.py
 from fastapi import Depends, HTTPException, APIRouter, Form
 from .db import get_db
+from pydantic import BaseModel
 import bcrypt
 
 Visitor_Router = APIRouter(tags=["Visitor"])
@@ -14,60 +15,90 @@ async def getAllVisitorsBooking(db=Depends(get_db)):
     cursor.execute(query)
     visitor_data = [
         {
-        "visitorid": visitor[0], 
-        "visitor_fname": visitor[1], 
-        "visitor_lname": visitor[2], 
-        "purpose": visitor[3], 
-        "date_of_visit": visitor[4], 
-        "time_of_visit": visitor[5]
+        "transaction_id": visitor[0],
+        "email": visitor[1],
+        "date_of_visit": visitor[2], 
+        "time_of_visit": visitor[3], 
+        "office_name": visitor[4],
+        "purpose": visitor[5]
         }      
         for visitor in cursor.fetchall()
         ]
     return visitor_data
 
-@Visitor_Router.post("/Visitors/", response_model=dict)
-async def createVisitorTransaction(
-    visitor_First_name: str = Form(...), 
-    visitor_Last_name: str = Form(...),
-    purpose: str = Form(...),
-    date_of_visit: str = Form(...),
-    time_of_visit: str = Form(...),
+@Visitor_Router.get("/VisitorInfo/{visitor_email}", response_model=list)
+async def getSpecificVisitorInfo(
+    email: str,
     db=Depends(get_db)
 ):
     try:
         cursor = db.cursor()
-        query = "INSERT INTO visitor (visitor_fname, visitor_lname, purpose, date_of_visit, time_of_visit) VALUES (%s, %s, %s, %s, %s)"
-        cursor.execute(query, (visitor_First_name, visitor_Last_name, purpose, date_of_visit, time_of_visit))
+        query = "SELECT transaction_id, email, date_of_visit, time_of_visit, office_name, purpose FROM visitor WHERE email = %s"
+        cursor.execute(query, (email,))
+        visitor_data = []
 
-        # Retrieve the last inserted ID using LAST_INSERT_ID()
-        cursor.execute("SELECT LAST_INSERT_ID()")
-        new_visitor_id = cursor.fetchone()
+        for visitor in cursor.fetchall():
+            visitor_info = {
+                "transaction_id": visitor[0],
+                "email": visitor[1],
+                "date_of_visit": visitor[2], 
+                "time_of_visit": visitor[3], 
+                "office_name": visitor[4],
+                "purpose": visitor[5]
+            }
+            visitor_data.append(visitor_info)
+
+        if not visitor_data:
+            raise HTTPException(status_code=404, detail="Visitor not found")
+
+        return visitor_data
+    finally:
+        if cursor:
+            cursor.close()  
+
+class book(BaseModel):
+    email: str
+    date_of_visit: str
+    time_of_visit: str
+    office_name: str
+    purpose: str 
+
+@Visitor_Router.post("/Visitors/", response_model=dict)
+async def createVisitorTransaction(
+    book: book,
+    db=Depends(get_db)
+):
+    try:
+        cursor = db.cursor()
+        query = "INSERT INTO visitor (email, date_of_visit, time_of_visit, office_name, purpose) VALUES (%s, %s, %s, %s, %s)"
+        cursor.execute(query, (book.email, book.date_of_visit, book.time_of_visit, book.office_name, book.purpose))
+
         db.commit()
 
-        return {"id": new_visitor_id, "visitor_First_name": visitor_First_name, "visitor_Last_name": visitor_Last_name, 
-        "purpose": purpose, "date_of_visit": date_of_visit, "time_of_visit": time_of_visit}
+        return {"message": "Booked successful"}
     finally:
         if cursor:
             cursor.close()  # Close cursor in the finally block
 
 @Visitor_Router.delete("/VisitorInfo/{visitor_id}", response_model=dict)
 async def deleteVisitorInfo(
-    visitor_id: int,
+    email: str,
+    transaction_id: int,
     db=Depends(get_db)
 ):
     try:
         cursor = db.cursor()
         # Check if the visitor info exists
-        query_check_visitor_info = "SELECT visitor_id FROM visitor WHERE visitor_id = %s"
-        cursor.execute(query_check_visitor_info, (visitor_id,))
+        query_check_visitor_info = "SELECT email, transaction_id FROM visitor WHERE email = %s AND transaction_id = %s"
+        cursor.execute(query_check_visitor_info, (email, transaction_id,))
         existing_visitor = cursor.fetchone()
 
         if not existing_visitor:
             raise HTTPException(status_code=404, detail="visitor info not found")
 
         # Delete the visitor info
-        query_delete_visitor_info = "DELETE FROM visitor WHERE visitor_id = %s"
-        cursor.execute(query_delete_visitor_info, (visitor_id,))
+        query_delete_visitor_info = "DELETE FROM visitor WHERE email = %s AND transaction_id = %s"
+        cursor.execute(query_delete_visitor_info, (email, transaction_id))
         db.commit()
 
         return {"message": "visitor info deleted successfully"}
