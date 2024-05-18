@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 14, 2024 at 05:11 PM
+-- Generation Time: May 18, 2024 at 04:25 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -95,7 +95,7 @@ CREATE TABLE `users` (
   `password` varchar(50) NOT NULL,
   `firstname` varchar(100) NOT NULL,
   `lastname` varchar(100) NOT NULL,
-  `role` varchar(20) DEFAULT NULL
+  `role` varchar(10) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -103,6 +103,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`email`, `password`, `firstname`, `lastname`, `role`) VALUES
+('admin1', 'admin1', 'Sylvesqual', 'Korathos', 'admin'),
 ('test1', 'test1', 'Reag', 'Paddle', 'visitor'),
 ('test2', 'test2', 'Stardew', 'Ravago', 'visitor');
 
@@ -185,7 +186,9 @@ ALTER TABLE `specific_office`
 ALTER TABLE `users`
   ADD PRIMARY KEY (`email`),
   ADD UNIQUE KEY `email` (`email`),
-  ADD KEY `idx_email` (`email`);
+  ADD KEY `idx_email` (`email`),
+  ADD KEY `idx_firstname` (`firstname`),
+  ADD KEY `idx_lastname` (`lastname`);
 
 --
 -- Indexes for table `visitor`
@@ -212,7 +215,7 @@ ALTER TABLE `visit_transaction`
 -- AUTO_INCREMENT for table `visitor`
 --
 ALTER TABLE `visitor`
-  MODIFY `transaction_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `transaction_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `visit_transaction`
