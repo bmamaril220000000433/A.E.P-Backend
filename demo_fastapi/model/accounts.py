@@ -24,26 +24,6 @@ def verify_passwordUnencrypted(input_password: str, stored_password: str) -> boo
     # Simple comparison of input_password with stored_password
     return input_password == stored_password
 
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
-@Accounts_Router.post("/Login/", response_model=dict)
-async def Login(login: LoginRequest,db=Depends(get_db)):
-
-    cursor = db.cursor()
-
-    query = "SELECT email, password FROM users WHERE email = %s"
-    cursor.execute(query, (login.email,))
-    user = cursor.fetchone()
-
-    if not user or user[1] != login.password:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-
-    cursor.close()
-    return {"message": "Login successful"}
-
 @Accounts_Router.get("/AllUsers/", response_model=list)
 async def getAllUsers(db=Depends(get_db)):
     query = "SELECT * FROM users"
@@ -76,6 +56,25 @@ async def readUser(
     finally:
         if cursor:
             cursor.close()  
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+@Accounts_Router.post("/Login/", response_model=dict)
+async def Login(login: LoginRequest,db=Depends(get_db)):
+
+    cursor = db.cursor()
+
+    query = "SELECT email, password FROM users WHERE email = %s"
+    cursor.execute(query, (login.email,))
+    user = cursor.fetchone()
+
+    if not user or user[1] != login.password:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    cursor.close()
+    return {"message": "Login successful"}
 
 class UserRegistration(BaseModel):
     email: str

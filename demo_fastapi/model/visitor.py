@@ -9,21 +9,21 @@ Visitor_Router = APIRouter(tags=["Visitor"])
 # CRUD operations
 
 @Visitor_Router.get("/Visitors/", response_model=list)
-async def getAllVisitorsBooking(db=Depends(get_db)):
+async def getVisitorBook(db=Depends(get_db)):
     cursor = db.cursor()
-    query = "SELECT * FROM visitor"
+    query = "SELECT v.transaction_id, u.firstname, u.lastname, v.date_of_visit, v.time_of_visit, v.purpose FROM visitor v INNER JOIN users u ON v.email = u.email"
     cursor.execute(query)
     visitor_data = [
         {
-        "transaction_id": visitor[0],
-        "email": visitor[1],
-        "date_of_visit": visitor[2], 
-        "time_of_visit": visitor[3], 
-        "office_name": visitor[4],
-        "purpose": visitor[5]
-        }      
+            "transaction_id": visitor[0],
+            "firstname": visitor[1],
+            "lastname": visitor[2],
+            "date_of_visit": visitor[3], 
+            "time_of_visit": visitor[4], 
+            "purpose": visitor[5]
+        }
         for visitor in cursor.fetchall()
-        ]
+    ]
     return visitor_data
 
 @Visitor_Router.get("/VisitorInfo/{visitor_email}", response_model=list)
@@ -79,7 +79,7 @@ async def createVisitorTransaction(
     finally:
         if cursor:
             cursor.close()  # Close cursor in the finally block
-
+            
 @Visitor_Router.delete("/VisitorInfo/{visitor_id}", response_model=dict)
 async def deleteVisitorInfo(
     email: str,
