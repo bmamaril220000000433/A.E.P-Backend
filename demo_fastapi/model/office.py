@@ -31,22 +31,40 @@ async def getAllOfficeOnly(db=Depends(get_db)):
         for office in cursor.fetchall()]
     return office_data
 
-@Office_Router.get("/officePerson/{Person}", response_model=dict)
+@Office_Router.get("/officePerson/{Office}", response_model=dict)
 async def specificOffice(
-    office_in_charge: str, 
+    office_name: str, 
     db=Depends(get_db)
 ):
     try:
         cursor = db.cursor()
-        query = "SELECT office_in_charge, office_name FROM office WHERE office_in_charge = %s"
-        cursor.execute(query, (office_in_charge,))
+        query = "SELECT office_in_charge, office_name FROM office WHERE office_name = %s"
+        cursor.execute(query, (office_name,))
         user = cursor.fetchone()
         if user is not None:
-            return {"office_in_charge": user[0], "office_name": user[1]}
+            return {"office_in_charge": user[0]}
         raise HTTPException(status_code=404, detail="User not found")
     finally:
         if cursor:
             cursor.close()  
+
+@Office_Router.get("/getOnlyYourOffice/", response_model=list)
+async def getOnlyYourOffice(
+    office_name: str, 
+    db=Depends(get_db)):
+    cursor = db.cursor()
+    query = "SELECT v.office_name, u.email, u.firstname, u.lastname, v.date_of_visit, v.time_of_visit, v.purpose FROM visitor v INNER JOIN users u ON v.email = u.email WHERE v.office_name = %s"
+    cursor.execute(query, (office_name,))
+    office_data = [
+        {
+        "firstname": office[2], 
+        "lastname": office[3],
+        "date_of_visit": office[4],
+        "time_of_visit": office[5],
+        "purpose": office[6],
+        }      
+        for office in cursor.fetchall()]
+    return office_data
 
 class OfficeInfo(BaseModel):
     office_name: str
