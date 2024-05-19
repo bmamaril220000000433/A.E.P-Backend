@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 18, 2024 at 04:25 AM
+-- Generation Time: May 19, 2024 at 06:39 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,37 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `entrypass`
 --
-
--- --------------------------------------------------------
-
---
--- Table structure for table `guard`
---
-
-CREATE TABLE `guard` (
-  `guard_name` varchar(30) NOT NULL,
-  `date_of_shift` date NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `guard`
---
-
-INSERT INTO `guard` (`guard_name`, `date_of_shift`) VALUES
-('guard1', '2024-04-22'),
-('guard2', '2024-04-22'),
-('guard3', '2024-04-22');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `guard_log`
---
-
-CREATE TABLE `guard_log` (
-  `guard_name` varchar(30) NOT NULL,
-  `transaction_number` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -132,8 +101,8 @@ INSERT INTO `visitor` (`transaction_id`, `email`, `date_of_visit`, `time_of_visi
 (4, 'test2', '2024-05-15', '02:14', 'Registrar', 'Im going to register'),
 (5, 'test2', '2024-05-15', '02:14', 'Bookstore', 'Im going to bookstore'),
 (8, 'test2', '2024-05-14', '05:39', 'Bookstore', 'book'),
-(10, 'test1', '2024-05-15', '2:14', 'OSAD', 't'),
-(11, 'test1', '2024-05-15', '21:44', 'Cashier', 'im going to pay');
+(74, 'test2', '2024-04-30', '02:59', 'Cashier', 'Im going to pay for my SOUL'),
+(75, 'test1', '2024-05-18', '16:00', 'Registrar', 'Im going to registrar');
 
 -- --------------------------------------------------------
 
@@ -153,19 +122,6 @@ CREATE TABLE `visit_transaction` (
 --
 -- Indexes for dumped tables
 --
-
---
--- Indexes for table `guard`
---
-ALTER TABLE `guard`
-  ADD PRIMARY KEY (`guard_name`);
-
---
--- Indexes for table `guard_log`
---
-ALTER TABLE `guard_log`
-  ADD KEY `fk_guard_log_guard_name` (`guard_name`),
-  ADD KEY `fk_guard_log_transaction_number` (`transaction_number`);
 
 --
 -- Indexes for table `office`
@@ -215,7 +171,7 @@ ALTER TABLE `visit_transaction`
 -- AUTO_INCREMENT for table `visitor`
 --
 ALTER TABLE `visitor`
-  MODIFY `transaction_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `transaction_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=76;
 
 --
 -- AUTO_INCREMENT for table `visit_transaction`
@@ -226,13 +182,6 @@ ALTER TABLE `visit_transaction`
 --
 -- Constraints for dumped tables
 --
-
---
--- Constraints for table `guard_log`
---
-ALTER TABLE `guard_log`
-  ADD CONSTRAINT `fk_guard_log_guard_name` FOREIGN KEY (`guard_name`) REFERENCES `guard` (`guard_name`),
-  ADD CONSTRAINT `fk_guard_log_transaction_number` FOREIGN KEY (`transaction_number`) REFERENCES `visit_transaction` (`transaction_number`);
 
 --
 -- Constraints for table `specific_office`
